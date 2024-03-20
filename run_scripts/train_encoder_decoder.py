@@ -1,5 +1,7 @@
 # import the necessary packages
+import sys
 import os
+sys.path.append(os.path.join(".."))
 
 import pandas as pd
 import torch
