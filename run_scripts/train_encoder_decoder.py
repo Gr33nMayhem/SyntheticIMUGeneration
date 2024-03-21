@@ -253,4 +253,4 @@ if __name__ == '__main__':
                 print(f'Epoch: {epoch}, Loss: {loss.item()}')
 
     # save the model
-    torch.save(model.state_dict(), 'encoder_decoder_model.pth')
+    torch.save(model.state_dict(), '../data/results/encoder_decoder_model.pth')
