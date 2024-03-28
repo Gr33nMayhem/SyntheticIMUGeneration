@@ -7,20 +7,20 @@ pd.options.display.float_format = '{:.2f}'.format
 
 
 class DataSet_VTT(Dataset):
-    def __init__(self, keypoint_data, imu_data, sliding_windows, flag='train'):
+    def __init__(self, keypoint_data, imu_data, sliding_windows, cv, flag='train'):
         self.flag = flag
-        # if train use all data except for user 1
+        # if train use all data except for user cv
         if self.flag == 'train':
-            self.keypoint_data = keypoint_data[keypoint_data['subject'] != 1]
-            self.imu_data = imu_data[imu_data['subject'] != 1]
-            self.sliding_windows_map = sliding_windows[sliding_windows['subject'] != 1]
+            self.keypoint_data = keypoint_data[keypoint_data['subject'] != cv]
+            self.imu_data = imu_data[imu_data['subject'] != cv]
+            self.sliding_windows_map = sliding_windows[sliding_windows['subject'] != cv]
             # reset the index
             self.sliding_windows_map = self.sliding_windows_map.reset_index(drop=True)
-        # if test use only user 1
+        # if test use only user cv
         elif self.flag == 'test':
-            self.keypoint_data = keypoint_data[keypoint_data['subject'] == 1]
-            self.imu_data = imu_data[imu_data['subject'] == 1]
-            self.sliding_windows_map = sliding_windows[sliding_windows['subject'] == 1]
+            self.keypoint_data = keypoint_data[keypoint_data['subject'] == cv]
+            self.imu_data = imu_data[imu_data['subject'] == cv]
+            self.sliding_windows_map = sliding_windows[sliding_windows['subject'] == cv]
             # reset the index
             self.sliding_windows_map = self.sliding_windows_map.reset_index(drop=True)
 
