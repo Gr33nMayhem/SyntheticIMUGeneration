@@ -1,6 +1,7 @@
 # import the necessary packages
 import os
 import sys
+import logging
 
 sys.path.append(os.path.join(".."))
 
@@ -12,7 +13,9 @@ from torch.utils.data import DataLoader
 
 from dataloaders.VTT_dataloader import DataSet_VTT
 from models.EncoderDecoderModel import EncoderDecoder
-
+import matplotlib.pyplot as plt
+import numpy as np
+import random
 import argparse
 
 parser = argparse.ArgumentParser(description='Train Encoder Decoder Model')
@@ -43,7 +46,7 @@ loss_function = args.loss_function
 pd.options.display.float_format = '{:.2f}'.format
 
 # check if cuda is available
-print(torch.cuda.is_available())
+logging.info(f"Cuda is available: {torch.cuda.is_available()}")
 torch.autograd.set_detect_anomaly(True)
 
 data_path = '../data/VTT_ConIot_Dataset'
@@ -64,44 +67,49 @@ keypoint_data, imu_data, sliding_windows = preprocess.processed_data()
 keypoint_data = keypoint_data.fillna(keypoint_data.mean())
 imu_data = imu_data.fillna(imu_data.mean())
 
-dataset_train = DataSet_VTT(keypoint_data, imu_data, sliding_windows, 1, flag='train')
+dataset_test = DataSet_VTT(keypoint_data, imu_data, sliding_windows, 1, flag='test')
 
-train_loader = DataLoader(dataset=dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
+test_loader = DataLoader(dataset=dataset_test, batch_size=batch_size, shuffle=True, num_workers=0)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 input_size = (window_size, num_input_features)
 output_size = (window_size, num_output_features)
 model = EncoderDecoder(input_size, output_size)
 model = model.double().cuda()
-if loss_function == 'cross_entropy':
-    criterion = nn.CrossEntropyLoss(reduction="mean").to(device)
+
+# load the model
+model_path = f'../data/results/encoder_decoder_model_{reference_point}_{window_size}_{step_size}_{imu_position}_{learning_rate}_{batch_size}_{num_epochs}_{loss_function}.pth'
+# if model exists load it
+if os.path.exists(model_path):
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+    # use the test_loader to get the test accuracy
+    test_loss = 0
+    count = 0
+    logging.info('Model loaded')
+    with torch.no_grad():
+        for i, data in enumerate(test_loader):
+            keypoint, imu = data
+            keypoint = keypoint.double().to(device)
+            imu = imu.double().to(device)
+            output = model(keypoint)
+            output = output.squeeze(1)
+            # calculate the loss
+            loss = nn.MSELoss(reduction="mean")(output, imu)
+            test_loss += loss.item()
+            if count % 10 == 0:
+                output = output.cpu().detach().numpy()
+                imu = imu.cpu().detach().numpy()
+                # from ouput and imu get the first sample
+                output = output[0]
+                imu = imu[0]
+                plt.figure()
+                # make plot between -3 and 3
+                plt.ylim(-3, 3)
+                plt.plot(output, label=['Output X', 'Output Y', 'Output Z'], linestyle='--')
+                plt.plot(imu, label=['IMU X', 'IMU Y', 'IMU Z'], linestyle='-')
+                plt.legend()
+                plt.show()
+    logging.info(f'Test Loss: {test_loss / len(test_loader)}')
 else:
-    criterion = nn.MSELoss(reduction="mean").to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-for epoch in range(num_epochs):
-    print(f'Epoch: {epoch}')
-    for i, data in enumerate(train_loader):
-        keypoint, imu = data
-        keypoint = keypoint.double().to(device)
-        # check if keypoint has any nan values
-        # print(torch.isnan(keypoint).any())
-        imu = imu.double().to(device)
-        output = model(keypoint)
-        output = output.squeeze(1)
-        loss = criterion(output, imu)
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        if i % 100 == 0:
-            print(f'Epoch: {epoch}, Loss: {loss.item()}')
-
-# save the model
-# create results directory if it does not exist
-if not os.path.exists('../data/results'):
-    os.makedirs('../data/results')
-
-# save the model with the parameters
-torch.save(model.state_dict(),
-           f'../data/results/encoder_decoder_model_{reference_point}_{window_size}_{step_size}_{imu_position}_{learning_rate}_{batch_size}_{num_epochs}_{loss_function}.pth')
+    logging.warning('Error: Model not found')
