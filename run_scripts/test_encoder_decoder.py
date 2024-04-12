@@ -8,7 +8,7 @@ sys.path.append(os.path.join(".."))
 import pandas as pd
 import torch
 import torch.nn as nn
-from model_train.preprocess import DataPreprocess
+from model_train.preprocess_mag import DataPreprocessMag
 from torch.utils.data import DataLoader
 
 from dataloaders.VTT_dataloader import DataSet_VTT
@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import argparse
+# --reference_point shoulder --window_size 25 --step_size 5 --imu_position hand --learning_rate 1e-05 --batch_size 256 --num_epochs 1000 --loss_function mse
 
 parser = argparse.ArgumentParser(description='Train Encoder Decoder Model')
 parser.add_argument('--reference_point', type=str, default='shoulder',
@@ -43,6 +44,15 @@ batch_size = args.batch_size
 num_epochs = args.num_epochs
 loss_function = args.loss_function
 
+reference_point = 'shoulder'
+window_size = 100
+step_size = 5
+imu_position = 'hand'
+learning_rate = 0.0001
+batch_size = 32
+num_epochs = 50
+loss_function = 'mse'
+
 pd.options.display.float_format = '{:.2f}'.format
 
 # check if cuda is available
@@ -52,14 +62,13 @@ torch.autograd.set_detect_anomaly(True)
 data_path = '../data/VTT_ConIot_Dataset'
 IMU_path = data_path + '/IMU'
 Keypoint_path = data_path + '/Keypoint'
-activities = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-users = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
-num_input_features = 36
-num_output_features = 3
+
+num_input_features = 18
+num_output_features = 1
 
 # main method
 
-preprocess = DataPreprocess(reference_point, window_size, step_size, imu_position)
+preprocess = DataPreprocessMag(reference_point, window_size, step_size)
 # get the processed data
 keypoint_data, imu_data, sliding_windows = preprocess.processed_data()
 
@@ -78,7 +87,7 @@ model = EncoderDecoder(input_size, output_size)
 model = model.double().cuda()
 
 # load the model
-model_path = f'../data/results/encoder_decoder_model_{reference_point}_{window_size}_{step_size}_{imu_position}_{learning_rate}_{batch_size}_{num_epochs}_{loss_function}.pth'
+model_path = f'../data/results/encoder_decoder_model_new_{reference_point}_{window_size}_{step_size}_{imu_position}_{learning_rate}_{batch_size}_{num_epochs}_{loss_function}.pth'
 # if model exists load it
 if os.path.exists(model_path):
     model.load_state_dict(torch.load(model_path))
