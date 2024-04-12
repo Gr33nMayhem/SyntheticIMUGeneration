@@ -265,23 +265,23 @@ class DataPreprocess:
 
         ''' Normalize Data Started'''
         # normalize the keypoint data
-        # create a copy of column activity and subject before dropping
-        activity = cropped_keypoint_data['activity']
-        subject = cropped_keypoint_data['subject']
-        # create a copy of all columns starting with prob
-        prob_cols = cropped_keypoint_data.filter(regex='prob').copy()
-        # drop the columns activity, subject and all columns starting with prob
-        cropped_keypoint_data = cropped_keypoint_data.drop(columns=['activity', 'subject'])
-        cropped_keypoint_data = cropped_keypoint_data.drop(columns=cropped_keypoint_data.filter(regex='prob').columns)
-        # Do a normalization
-        scaler = StandardScaler()
-        cropped_keypoint_data = pd.DataFrame(scaler.fit_transform(cropped_keypoint_data),
-                                             columns=cropped_keypoint_data.columns)
-        # add the columns activity and subject back
-        cropped_keypoint_data['activity'] = activity
-        cropped_keypoint_data['subject'] = subject
-        # add the columns starting with prob back
-        cropped_keypoint_data = pd.concat([cropped_keypoint_data, prob_cols], axis=1)
+        # # create a copy of column activity and subject before dropping
+        # activity = cropped_keypoint_data['activity']
+        # subject = cropped_keypoint_data['subject']
+        # # create a copy of all columns starting with prob
+        # prob_cols = cropped_keypoint_data.filter(regex='prob').copy()
+        # # drop the columns activity, subject and all columns starting with prob
+        # cropped_keypoint_data = cropped_keypoint_data.drop(columns=['activity', 'subject'])
+        # cropped_keypoint_data = cropped_keypoint_data.drop(columns=cropped_keypoint_data.filter(regex='prob').columns)
+        # # Do a normalization
+        # scaler = StandardScaler()
+        # cropped_keypoint_data = pd.DataFrame(scaler.fit_transform(cropped_keypoint_data),
+        #                                      columns=cropped_keypoint_data.columns)
+        # # add the columns activity and subject back
+        # cropped_keypoint_data['activity'] = activity
+        # cropped_keypoint_data['subject'] = subject
+        # # add the columns starting with prob back
+        # cropped_keypoint_data = pd.concat([cropped_keypoint_data, prob_cols], axis=1)
         ''' Normalize Data Completed'''
 
         ''' Remove any IMU position columns that don't start with self.imu_position Started'''
