@@ -19,7 +19,7 @@ torch.autograd.set_detect_anomaly(True)
 data_path = '../data/VTT_ConIot_Dataset'
 IMU_path = data_path + '/IMU'
 Keypoint_path = data_path + '/Keypoint'
-activities = [1, 2, 3, 4]
+activities = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 users = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
 
 
