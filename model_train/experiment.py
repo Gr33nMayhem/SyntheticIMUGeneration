@@ -37,6 +37,8 @@ class Experiment:
             train_loader = DataLoader(dataset=dataset_train, batch_size=self.batch_size, shuffle=True, num_workers=0)
 
             cv_save_path = os.path.join(self.save_path, f'cv_{cv}')
+            if not os.path.exists(cv_save_path):
+                os.makedirs(cv_save_path)
             cv_model_path = os.path.join(cv_save_path, 'saved_model.pth')
             # check if model already exists at save path
             if os.path.exists(cv_model_path):
