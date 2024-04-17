@@ -15,7 +15,7 @@ window_size = 100
 step_size = 5
 imu_position = 'hand'
 learning_rate = 0.0001
-batch_size = 32
+batch_size = 54
 num_epochs = 50
 loss_function = 'mse'
 

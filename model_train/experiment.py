@@ -34,7 +34,7 @@ class Experiment:
         for cv in self.participants:
             print(f'Cross Validation: {cv}')
             dataset_train = DataSet_VTT(self.keypoint_data, self.imu_data, self.sliding_windows, cv, flag='train')
-            train_loader = DataLoader(dataset=dataset_train, batch_size=self.batch_size, shuffle=True, num_workers=0)
+            train_loader = DataLoader(dataset=dataset_train, batch_size=self.batch_size, shuffle=True, num_workers=4)
 
             cv_save_path = os.path.join(self.save_path, f'cv_{cv}')
             if not os.path.exists(cv_save_path):
@@ -42,7 +42,7 @@ class Experiment:
             cv_model_path = os.path.join(cv_save_path, 'saved_model.pth')
             # check if model already exists at save path
             if os.path.exists(cv_model_path):
-                print('Model already exists at save path. Exiting...')
+                print('Model already exists at save path. Loading...')
                 # load the model
                 model_path = cv_model_path
                 model = EncoderDecoder(self.input_size, self.output_size)
@@ -72,6 +72,54 @@ class Experiment:
                     optimizer.step()
                     if i % 100 == 0:
                         print(f'Epoch: {epoch}, Loss: {loss.item()}')
+
+            # save the model
+            # create results directory if it does not exist
+            if not os.path.exists('../data/results'):
+                os.makedirs('../data/results')
+
+            # save the model with the parameters
+            torch.save(model.state_dict(), cv_model_path)
+
+    def run_test(self):
+        for cv in self.participants:
+            print(f'Cross Validation: {cv}')
+            dataset_test = DataSet_VTT(self.keypoint_data, self.imu_data, self.sliding_windows, cv, flag='test')
+            test_loader = DataLoader(dataset=dataset_test, batch_size=self.batch_size, shuffle=False, num_workers=0)
+
+            cv_save_path = os.path.join(self.save_path, f'cv_{cv}')
+            if not os.path.exists(cv_save_path):
+                os.makedirs(cv_save_path)
+            cv_model_path = os.path.join(cv_save_path, 'saved_model.pth')
+            # check if model already exists at save path
+            if os.path.exists(cv_model_path):
+                print('Model exists at save path....')
+                # load the model
+                model_path = cv_model_path
+                model = EncoderDecoder(self.input_size, self.output_size)
+                model.load_state_dict(torch.load(model_path))
+            else:
+                print('Model does not exists at save path. Exiting....')
+                return
+
+            model = model.double().cuda()
+            if self.loss_function == 'cross_entropy':
+                criterion = nn.CrossEntropyLoss(reduction="mean").to(self.device)
+            else:
+                criterion = nn.MSELoss(reduction="mean").to(self.device)
+
+            all_loss = []
+            for i, data in enumerate(test_loader):
+                keypoint, imu = data
+                keypoint = keypoint.double().to(self.device)
+                imu = imu.double().to(self.device)
+                output = model(keypoint)
+                output = output.squeeze(1)
+                loss = criterion(output, imu)
+                all_loss.append(loss.item())
+
+            mean_loss = sum(all_loss) / len(all_loss)
+            print(f'Mean Loss: {mean_loss}')
 
             # save the model
             # create results directory if it does not exist
