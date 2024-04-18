@@ -10,12 +10,14 @@ import torch
 from model_train.preprocess_mag import DataPreprocessMag
 from model_train.experiment import Experiment
 
+import matplotlib.pyplot as plt
+
 reference_point = 'shoulder'
 window_size = 100
 step_size = 5
 imu_position = 'hand'
 learning_rate = 0.0001
-batch_size = 32
+batch_size = 54
 num_epochs = 50
 loss_function = 'mse'
 
@@ -53,4 +55,14 @@ experiment = Experiment(participants=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
                         output_size=output_size, device=device, save_path=save_path, batch_size=batch_size,
                         num_epochs=num_epochs, learning_rate=learning_rate, loss_function=loss_function)
 
-experiment.run_test()
+loss_per_cv = experiment.run_test()
+
+#plot a bar graph for the loss per cross validation
+plt.bar(range(len(loss_per_cv)), loss_per_cv.values(), align='center')
+plt.xticks(range(len(loss_per_cv)), list(loss_per_cv.keys()))
+plt.xlabel('Cross Validation')
+plt.ylabel('Loss')
+plt.title('Loss per Cross Validation')
+#save the plot
+plt.savefig(f'../graphs/loss_per_cv.png')
+plt.show()

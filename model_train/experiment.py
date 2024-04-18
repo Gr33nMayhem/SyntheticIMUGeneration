@@ -12,6 +12,8 @@ from torch.utils.data import DataLoader
 from dataloaders.VTT_dataloader import DataSet_VTT
 from models.EncoderDecoderModel import EncoderDecoder
 
+import matplotlib.pyplot as plt
+
 
 class Experiment:
     def __init__(self, participants, input_size, keypoint_data, imu_data, sliding_window, output_size, device,
@@ -82,6 +84,7 @@ class Experiment:
             torch.save(model.state_dict(), cv_model_path)
 
     def run_test(self):
+        loss_per_cv = {}
         for cv in self.participants:
             print(f'Cross Validation: {cv}')
             dataset_test = DataSet_VTT(self.keypoint_data, self.imu_data, self.sliding_windows, cv, flag='test')
@@ -109,6 +112,8 @@ class Experiment:
                 criterion = nn.MSELoss(reduction="mean").to(self.device)
 
             all_loss = []
+            imu = None
+            output = None
             for i, data in enumerate(test_loader):
                 keypoint, imu = data
                 keypoint = keypoint.double().to(self.device)
@@ -118,13 +123,16 @@ class Experiment:
                 loss = criterion(output, imu)
                 all_loss.append(loss.item())
 
+            # plot the imu and predicted imu
+            plt.plot(imu.cpu().detach().numpy()[1], label='IMU')
+            plt.plot(output.cpu().detach().numpy()[1], label='Predicted IMU')
+            plt.legend()
+            #save the plot
+            plt.savefig(f'../graphs/imu_plot{cv}.png')
+            plt.show()
+
             mean_loss = sum(all_loss) / len(all_loss)
             print(f'Mean Loss: {mean_loss}')
+            loss_per_cv[cv] = mean_loss
+        return loss_per_cv
 
-            # save the model
-            # create results directory if it does not exist
-            if not os.path.exists('../data/results'):
-                os.makedirs('../data/results')
-
-            # save the model with the parameters
-            torch.save(model.state_dict(), cv_model_path)

@@ -15,8 +15,8 @@ window_size = 100
 step_size = 5
 imu_position = 'hand'
 learning_rate = 0.0001
-batch_size = 54
-num_epochs = 50
+batch_size = 256
+num_epochs = 60
 loss_function = 'mse'
 
 pd.options.display.float_format = '{:.2f}'.format
